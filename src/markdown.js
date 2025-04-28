@@ -7,81 +7,65 @@ import ObjectAssignDeep from 'object-assign-deep';
 import MathRenderer from './internal/math-renderer';
 import HighlightRenderer from './internal/highlight-renderer';
 
-export default async function render(input, cache, callbackFilter, options) {
-  // Check cache first.
-  let cacheKey;
-  if (cache) {
-    cacheKey = ObjectHash({
-      type: "Markdown",
-      task: input,
-      options: options
-    });
+export default async function render(input, cache, callbackFilter, options = {}) {
+  const cacheKey = cache && ObjectHash({ type: 'Markdown', task: input, options });
 
-    let cachedResult = await cache.get(cacheKey);
-    if (cachedResult) return cachedResult;
+  if (cache) {
+    const cached = await cache.get(cacheKey);
+    if (cached) return cached;
   }
 
-  // Merge options with default values and normalize non-object input for options.
-  options = Object.assign({
-    markdownItMergeCells: true
-  }, options);
+  const uuidReplaces = {};
 
-  // Maths and highlights are rendered asynchronously, so a UUID placeholder is
-  // returned to markdown-it during markdown rendering process. After markdown
-  // and these finish rendering, replace the placeholder with rendered content
-  // in markdown rendering result.
-  let uuidReplaces = {};
-
-  let mathRenderer = new MathRenderer(cache, (uuid, result) => {
+  const mathRenderer = new MathRenderer(cache, (uuid, result) => {
     uuidReplaces[uuid] = result;
   });
 
-  let highlightRenderer = new HighlightRenderer(cache, (uuid, result) => {
+  const highlightRenderer = new HighlightRenderer(cache, (uuid, result) => {
     uuidReplaces[uuid] = result;
   }, options.highlight);
 
-  const renderer = new MarkdownIt(ObjectAssignDeep({
+  const mdOptions = ObjectAssignDeep({
     html: true,
     breaks: false,
     linkify: true,
     typographer: false,
-    highlight: (code, language) => highlightRenderer.addRenderTask(code, language)
-  }, options.markdownIt));
+    highlight: (code, lang) => highlightRenderer.addRenderTask(code, lang),
+  }, options.markdownIt || {});
 
-  renderer.use(MarkdownItMath, ObjectAssignDeep({
+  const mathOptions = ObjectAssignDeep({
     inlineOpen: '$',
     inlineClose: '$',
     blockOpen: '$$',
     blockClose: '$$',
     inlineRenderer: str => mathRenderer.addRenderTask(str, false),
-    blockRenderer: str => mathRenderer.addRenderTask(str, true)
-  }, options.markdownItMath));
+    blockRenderer: str => mathRenderer.addRenderTask(str, true),
+  }, options.markdownItMath || {});
 
-  // Inject merge table cell support.
-  if (options.markdownItMergeCells) {
+  const renderer = new MarkdownIt(mdOptions).use(MarkdownItMath, mathOptions);
+
+  if (options.markdownItMergeCells !== false) {
     renderer.use(MarkdownItMergeCells);
   }
-  
-  let htmlResult = renderer.render(input);
+
+  let html = renderer.render(input);
+
   if (callbackFilter) {
-    // Useful for XSS filtering.
-    htmlResult = callbackFilter(htmlResult);
-  }
-  
-  // Do math and highlight rendering.
-  await mathRenderer.doRender(uuid => htmlResult.indexOf(uuid) === -1);
-  await highlightRenderer.doRender(uuid => htmlResult.indexOf(uuid) === -1);
-
-  // Replace placeholders back.
-  let replacedHtmlResult = htmlResult;
-  for (let uuid in uuidReplaces) {
-    replacedHtmlResult = replacedHtmlResult.replace(uuid, uuidReplaces[uuid]);
+    html = callbackFilter(html);
   }
 
-  // Set cache.
+  await Promise.all([
+    mathRenderer.doRender(uuid => !html.includes(uuid)),
+    highlightRenderer.doRender(uuid => !html.includes(uuid)),
+  ]);
+
+  for (const [uuid, content] of Object.entries(uuidReplaces)) {
+    html = html.replace(uuid, content);
+  }
+
   if (cache) {
-    await cache.set(cacheKey, replacedHtmlResult);
+    await cache.set(cacheKey, html);
   }
 
-  return replacedHtmlResult;
+  return html;
 }
