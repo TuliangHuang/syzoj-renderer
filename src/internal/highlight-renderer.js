@@ -1,21 +1,41 @@
 import syntect from '@syntect/node';
-import EscapeHTML from 'escape-html';
-import ObjectHash from 'object-hash';
-import ObjectAssignDeep from 'object-assign-deep';
+import escapeHTML from 'escape-html';
+import objectHash from 'object-hash';
+import objectAssignDeep from 'object-assign-deep';
 
 import AsyncRenderer from './async-renderer';
 
 const languageMap = {
-  'c++': 'cpp'
+  'c++': 'cpp',
+  'js': 'javascript',
+  'py': 'python',
+  'rb': 'ruby',
+  'sh': 'bash',
+  'c#': 'csharp',
+  'cs': 'csharp',
+  'ts': 'typescript',
+  'md': 'markdown',
+  'plaintext': 'plain',
+  'text': 'plain',
+  'txt': 'plain'
 };
 
-export async function highlight(code, language, cache, options) {
-  if (languageMap[language]) language = languageMap[language];
+export async function highlight(code, language, cache, options = {}) {
+  language = language?.toLowerCase();
+  language = languageMap[language] || language;
+
+  const defaultOptions = {
+    wrapper: ['<pre><code>', '</code></pre>'],
+    expandTab: null,
+    highlighter: null
+  };
+
+  options = objectAssignDeep({}, defaultOptions, options);
 
   let cacheKey;
   if (cache) {
-    cacheKey = ObjectHash({
-      type: "Highlight",
+    cacheKey = objectHash({
+      type: 'Highlight',
       task: {
         code,
         language,
@@ -27,36 +47,29 @@ export async function highlight(code, language, cache, options) {
     if (cachedResult) return cachedResult;
   }
 
-  options = ObjectAssignDeep({
-    wrapper: ['<pre><code>', '</code></pre>'],
-    expandTab: null
-  }, options);
-
   let result;
   try {
     if (typeof options.highlighter === 'function') {
       result = await options.highlighter(code, language);
     } else {
-      result = syntect.highlight(code, language, "hl-").html;
+      result = syntect.highlight(code, language, 'hl-').html;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(`Highlighting error for language "${language}":`, e);
+  }
 
-  // May error rendering.
   if (typeof result !== 'string' || result.length === 0) {
-    result = EscapeHTML(code);
+    result = escapeHTML(code);
   }
 
-  // Add wrapper.
-  const wrapper = Array.isArray(options.wrapper) ? options.wrapper : [];
-  if (typeof wrapper[0] === 'string') result = wrapper[0] + result;
-  if (typeof wrapper[1] === 'string') result = result + wrapper[1];
+  const [startWrapper, endWrapper] = Array.isArray(options.wrapper) ? options.wrapper : ['', ''];
+  result = `${startWrapper}${result}${endWrapper}`;
 
-  // Expand tab.
   if (typeof options.expandTab === 'number' && options.expandTab > 0) {
-    result = result.split('\t').join(' '.repeat(options.expandTab));
+    result = result.replace(/\t/g, ' '.repeat(options.expandTab));
   }
 
-  if (cache) {
+  if (cache && cacheKey) {
     await cache.set(cacheKey, result);
   }
 
@@ -64,32 +77,28 @@ export async function highlight(code, language, cache, options) {
 }
 
 export default class HighlightRenderer extends AsyncRenderer {
-  constructor(cache, callbackAddReplace, options) {
+  constructor(cache, callbackAddReplace, options = {}) {
     super(cache, callbackAddReplace);
     this.options = options;
   }
 
   addRenderTask(code, language) {
     return this._addRenderTask({
-      code: code,
-      language: language,
+      code,
+      language,
       options: this.options
     });
   }
 
-  // markdown-it will wrap the highlighted result if it's not started with '<pre'.
-  // Wrap the uuid with a <pre> tag to make sure markdown-it's result is valid HTML
-  // to prevent filter function from parse error.
   _generateUUID(uuidGenerator) {
-    return '<pre>' + uuidGenerator() + '</pre>';
+    return `<pre>${uuidGenerator()}</pre>`;
   }
 
-  // Don't cache if language is plain -- it only need to be escaped, not highlighted.
   _shouldCache(task) {
     return task.language !== 'plain';
   }
 
   async _doRender(task) {
-    return await highlight(task.code, task.language, this.cache, this.options, this.highlighter);
+    return await highlight(task.code, task.language, this.cache, this.options);
   }
 }
