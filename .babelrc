@@ -1,13 +1,13 @@
 {
-  "presets": ["env"],
+  "presets": ["@babel/preset-env"],
   "plugins": [
     [
-      "transform-runtime",
+      "@babel/plugin-transform-runtime",
       {
         "regenerator": true,
-        "helpers": false,
-        "polyfill": false
+        "helpers": false
       }
-    ]
+    ],
+    "@babel/plugin-transform-object-rest-spread"
   ]
 }
