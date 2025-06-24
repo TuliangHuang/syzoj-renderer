@@ -36,7 +36,7 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 var languageMap = {
   'c++': 'cpp',
   'js': 'javascript',
-  'py': 'python',
+  'python': 'py',
   'rb': 'ruby',
   'sh': 'bash',
   'c#': 'csharp',

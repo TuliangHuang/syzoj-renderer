@@ -913,7 +913,7 @@
   resolved "https://registry.yarnpkg.com/@syntect/node-win32-x64-msvc/-/node-win32-x64-msvc-0.0.4.tgz#c18ea4a1d36c5abd5d803660f4c98366ddbc52b8"
   integrity sha512-4DfI+/dUTn58rE41WJZBzAeHxKbRY7o7qwFnYW4r/wRe3nWf2dGskJCUFa4VdpEkawkz1wUqLUGyjiGp9PgiDg==
 
-"@syntect/node@^0.0.4":
+"@syntect/node@0.0.4", "@syntect/node@^0.0.4":
   version "0.0.4"
   resolved "https://registry.yarnpkg.com/@syntect/node/-/node-0.0.4.tgz#43e9d5144c8e428ffa67cfb1fbc53503df8ce107"
   integrity sha512-SSRB3RkCp6TY3EvFgLHPhHS8r0UclYex7lx58m2GuG63SpGIQ6I0ojNCmCUrEzX7fbdB7rBLwWfkNy4qGlFK/A==
@@ -931,6 +931,11 @@
     "@syntect/node-win32-arm64-msvc" "0.0.4"
     "@syntect/node-win32-ia32-msvc" "0.0.4"
     "@syntect/node-win32-x64-msvc" "0.0.4"
+
+"@syntect/wasm@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/@syntect/wasm/-/wasm-0.0.4.tgz#0ef2db50678423c6b24498453e38edbc45e78cd0"
+  integrity sha512-deCR0fVY/HNs+T9ajwTLNt2zXzPecwfpjwnUhiXTgpC4i+euJdZEv3KyP36CLOhF8qKTN2i4ZA7RwseIU190mA==
 
 "@xmldom/xmldom@0.9.8":
   version "0.9.8"
@@ -1663,6 +1668,14 @@ supports-preserve-symlinks-flag@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/supports-preserve-symlinks-flag/-/supports-preserve-symlinks-flag-1.0.0.tgz#6eda4bd344a3c94aea376d4cc31bc77311039e09"
   integrity sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==
+
+syntect@^0.0.4:
+  version "0.0.4"
+  resolved "https://registry.yarnpkg.com/syntect/-/syntect-0.0.4.tgz#384d91c48a745d63f15e9a68956b4eddf67f15be"
+  integrity sha512-7vqv5LAGzoawL2dArRF+l+q7po+CJzUA8pSO591cS+XVEC3YtQIJy5mvMXoCuGBIxpWBppVhMXCdmJKOv0h4iA==
+  dependencies:
+    "@syntect/node" "0.0.4"
+    "@syntect/wasm" "0.0.4"
 
 to-regex-range@^5.0.1:
   version "5.0.1"
