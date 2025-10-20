@@ -59,3 +59,14 @@ typings/
 
 # next.js build output
 .next
+
+# Yarn v2+ (Berry)
+# If you are NOT using Zero-Installs, ignore Yarn's directory except for these subfolders
+# Reference: https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
